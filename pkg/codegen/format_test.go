@@ -56,7 +56,7 @@ func TestCustomPrintf(t *testing.T) {
 		{
 			name:  "test",
 			caseN: 1,
-			one: codegen.Fmt[NestedStruct]{Original: NestedStruct{
+			one: codegen.Format(NestedStruct{
 				Num:  1,
 				Text: "test",
 				StructField: SimpleStruct{
@@ -73,13 +73,12 @@ func TestCustomPrintf(t *testing.T) {
 					Field4: map[string]int{"test": 1},
 					Field5: nil,
 				},
-			},
-			},
+			}),
 		},
 		{
 			name:  "test",
 			caseN: 2,
-			two: codegen.Fmt[NestedStruct2]{Original: NestedStruct2{
+			two: codegen.Format(NestedStruct2{
 				Num:  1,
 				Text: "test",
 				StructField: SimpleStruct{
@@ -103,8 +102,7 @@ func TestCustomPrintf(t *testing.T) {
 					Field4: map[string]int{"test": 1},
 					Field5: nil,
 				},
-			},
-			},
+			}),
 		},
 	}
 

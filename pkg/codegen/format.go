@@ -10,6 +10,10 @@ type Fmt[T any] struct {
 	Original T
 }
 
+func Format[T any](t T) Fmt[T] {
+	return Fmt[T]{Original: t}
+}
+
 // implement fmt.Formatter interface
 func (t Fmt[T]) Format(f fmt.State, c rune) {
 	if c == 'g' && f.Flag('#') {
