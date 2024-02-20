@@ -23,6 +23,17 @@ func (t Fmt[T]) Format(f fmt.State, c rune) {
 	}
 }
 
+func switchCodeGen[T any](t T) string {
+	val := reflect.ValueOf(t)
+	// typ := reflect.TypeOf(t)
+	switch val.Kind() {
+	case reflect.Struct:
+		return StructCodeGen(t)
+	default:
+		return fmt.Sprintf("%#v", t)
+	}
+}
+
 func StructCodeGen[T any](t T) string {
 	var builder strings.Builder
 
@@ -46,7 +57,7 @@ func StructCodeGen[T any](t T) string {
 				continue
 			}
 			value := reflect.Indirect(field)
-			builder.WriteString(fmt.Sprintf("\t%s: &%s,\n", fieldType.Name, StructCodeGen(value.Interface())))
+			builder.WriteString(fmt.Sprintf("\t%s: &%s,\n", fieldType.Name, switchCodeGen(value.Interface())))
 		default:
 			builder.WriteString(fmt.Sprintf("\t%s: %#v,\n", fieldType.Name, field.Interface()))
 		}
