@@ -17,7 +17,7 @@ func Format[T any](t T) Fmt[T] {
 // implement fmt.Formatter interface
 func (t Fmt[T]) Format(f fmt.State, c rune) {
 	if c == 'g' && f.Flag('#') {
-		fmt.Fprintf(f, "%s", StructCodeGen(t.Original))
+		fmt.Fprintf(f, "%s", switchCodeGen(t.Original))
 	} else {
 		fmt.Fprintf(f, "%#v", t.Original)
 	}
@@ -62,12 +62,11 @@ func SliceCodeGen[T any](t T) string {
 				builder.WriteString(fmt.Sprintf("\t%s,\n", StructCodeGen(field.Interface())))
 			case reflect.Ptr:
 				if field.IsNil() {
-					builder.WriteString("\tnil,\n")
 					continue
 				}
 				value := reflect.Indirect(field)
 
-				builder.WriteString(fmt.Sprintf("\tlo.ToPtr(%s),\n", switchCodeGen(value.Interface())))
+				builder.WriteString(fmt.Sprintf("\tlo.ToPtr[%s](%s),\n", reflect.TypeOf(value.Interface()).Name(), switchCodeGen(value.Interface())))
 			case reflect.Slice:
 				builder.WriteString(fmt.Sprintf("\t%s,\n", switchCodeGen(field.Interface())))
 			case reflect.Array:
