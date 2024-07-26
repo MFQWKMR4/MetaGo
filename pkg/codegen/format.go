@@ -2,6 +2,7 @@ package codegen
 
 import (
 	"fmt"
+	"os"
 	"reflect"
 	"strings"
 )
@@ -21,6 +22,15 @@ func (t Fmt[T]) Format(f fmt.State, c rune) {
 	} else {
 		fmt.Fprintf(f, "%#v", t.Original)
 	}
+}
+
+func WriteFile[T any](filePath string, content T) error {
+	str := fmt.Sprintf("%#g\n", Format(content))
+	err := os.WriteFile(filePath, []byte(str), 0644)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func switchCodeGen[T any](t T) string {
@@ -45,12 +55,21 @@ func switchCodeGen[T any](t T) string {
 
 func SliceCodeGen[T any](t T) string {
 
+	rv := reflect.ValueOf(t)
+
+	// if rv.Len() == 0 {
+	// 	return "nil"
+	// }
+
 	var builder strings.Builder
 
 	builder.WriteString("[]")
-	builder.WriteString(reflect.TypeOf(t).Elem().Name())
+
+	tt := rv.Type().Elem()
+	elemType := tt.String()
+	builder.WriteString(elemType)
 	builder.WriteString("{\n")
-	rv := reflect.ValueOf(t)
+
 	for i := 0; i < rv.Len(); i++ {
 		field := rv.Index(i)
 
@@ -65,8 +84,16 @@ func SliceCodeGen[T any](t T) string {
 					continue
 				}
 				value := reflect.Indirect(field)
+				v2 := value.Interface()
+				// val := reflect.ValueOf(v2)
+				typ := reflect.TypeOf(v2)
 
-				builder.WriteString(fmt.Sprintf("\tlo.ToPtr[%s](%s),\n", reflect.TypeOf(value.Interface()).Name(), switchCodeGen(value.Interface())))
+				// typeName := reflect.TypeOf(value.Interface()).Name()
+				// if typeName == "" {
+				// 	typeName = reflect.TypeOf(value.Interface()).Elem().Name()
+				// }
+
+				builder.WriteString(fmt.Sprintf("\tlo.ToPtr[%s](%s),\n", typ.String(), switchCodeGen(v2)))
 			case reflect.Slice:
 				builder.WriteString(fmt.Sprintf("\t%s,\n", switchCodeGen(field.Interface())))
 			case reflect.Array:
@@ -79,7 +106,7 @@ func SliceCodeGen[T any](t T) string {
 		}
 
 	}
-	builder.WriteString("}")
+	builder.WriteString("\t}")
 	return builder.String()
 }
 
@@ -89,7 +116,7 @@ func StructCodeGen[T any](t T) string {
 	val := reflect.ValueOf(t)
 	typ := reflect.TypeOf(t)
 
-	builder.WriteString(fmt.Sprintf("%s{\n", typ.Name()))
+	builder.WriteString(fmt.Sprintf("%s{\n", typ.String()))
 
 	for i := 0; i < val.NumField(); i++ {
 		field := val.Field(i)
@@ -108,7 +135,11 @@ func StructCodeGen[T any](t T) string {
 				}
 				value := reflect.Indirect(field)
 
-				builder.WriteString(fmt.Sprintf("\t%s: lo.ToPtr[%s](%s),\n", fieldType.Name, reflect.TypeOf(value.Interface()).Name(), switchCodeGen(value.Interface())))
+				v2 := value.Interface()
+				// val := reflect.ValueOf(v2)
+				typ := reflect.TypeOf(v2)
+
+				builder.WriteString(fmt.Sprintf("\t%s: lo.ToPtr[%s](%s),\n", fieldType.Name, typ.String(), switchCodeGen(value.Interface())))
 			case reflect.Slice:
 				builder.WriteString(fmt.Sprintf("\t%s: %s,\n", fieldType.Name, SliceCodeGen(field.Interface())))
 			case reflect.Array:
